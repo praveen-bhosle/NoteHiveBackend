@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {  
+ id Int @id @default(autoincrement()) 
+ name String
+ password String
+ email String  @unique
+ workspaces WokspacesOnUsers[]  
+ createdAt DateTime @default(now())
+ updatedAt DateTime @default(now()) 
+}
+
+
+model Workspace { 
+  id Int @id @default(autoincrement()) 
+  name String 
+  users  WokspacesOnUsers[]
+  notes  Note[]
+  subscribed Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
+
+enum Role { 
+  ADMIN  
+  MEMBER
+}
+
+model WokspacesOnUsers { 
+  userId       Int 
+  user         User @relation(references: [id] , fields: [userId] , onDelete: Cascade)
+  workspaceId  Int 
+  workspace    Workspace @relation(fields: [workspaceId] , references: [id] , onDelete:  Cascade )
+  role         Role
+  @@id([userId,workspaceId])
+}
+
+
+model Note { 
+  id Int @id @default(autoincrement()) 
+  title String 
+  content String?
+  workspaceId Int
+  workspace Workspace @relation( fields: [ workspaceId] , references: [id] , onDelete: Cascade )
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) 
+}
