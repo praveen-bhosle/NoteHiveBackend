@@ -9,11 +9,9 @@ const NotesRouter = Router() ;
 
 NotesRouter.use(RoleMiddleware) ; 
 
-NotesRouter.get("", async (req:AuthorizedRequest , res : Response) => { 
-    try {
-        await prisma.$connect() ;
-        const {workspaceId} = req.body ;   
-        const notes = await getNotes({prisma,workspaceId}) ;  
+NotesRouter.get("/", async (req:AuthorizedRequest , res : Response) => { 
+    try { 
+        const notes = await getNotes({prisma, workspaceId : req.context.workspaceId }) ;  
         res.status(200).json({msg:"Notes accessed." , data : notes }) ; 
     }
     catch(e) { 
@@ -21,21 +19,16 @@ NotesRouter.get("", async (req:AuthorizedRequest , res : Response) => {
         res.status(500).json({msg:"internal server error"}) ; 
         return ; 
     }  
-    finally { 
-        await prisma.$disconnect() ; 
-    }
 }) 
 
 NotesRouter.get("/:id" , async  (req  : AuthorizedRequest  , res : Response)=> {  
     try {
-        await prisma.$connect() ;
-        const id = req.params.id ; 
-        if(typeof id !== "number") { 
+        const id = parseInt(req.params.id) ; 
+        if(isNaN(id)) { 
             res.status(404).json({msg:"Note not found."}) ;
             return ;
         } 
-        const parsedId = parseInt(req.params.id) ; 
-        const note = await getNote({prisma,id : parsedId}) ;  
+        const note = await getNote({prisma,id}) ;  
         if(!note) { 
             res.status(404).json({msg:"Note not found."}) ;
             return ; 
@@ -47,26 +40,22 @@ NotesRouter.get("/:id" , async  (req  : AuthorizedRequest  , res : Response)=> {
         res.status(500).json({msg:"internal server error"}) ; 
         return ; 
     }  
-    finally { 
-        await prisma.$disconnect() ; 
-    }
 }) 
 
-NotesRouter.post("" , async  (req  : AuthorizedRequest  , res : Response)=> {  
+NotesRouter.post("/" , async  (req  : AuthorizedRequest  , res : Response)=> {  
     try {
-        await prisma.$connect() ;
-        const {workspaceId , title , content } = req.body ;    
-        if( !workspaceId ||  typeof workspaceId !== "number" || !title || typeof title !== "string" || typeof content !== "string" ) { 
-            res.status(404).json({msg:"Invalid or missing fields in body."}) ;
+        const { title , content } = req.body ;     
+        if( !title || typeof title !== "string" || typeof content !== "string" ) { 
+            res.status(400).json({msg:"Invalid or missing fields in body."}) ;
             return ;
         } 
-        const subscribed = await checkIfSubscribed({prisma,id: workspaceId}) ;
-        const count_of_notes = await getNumberOfNotes({prisma, workspaceId  }) ; 
+        const subscribed = await checkIfSubscribed({prisma,id: req.context.workspaceId }) ;
+        const count_of_notes = await getNumberOfNotes({prisma, workspaceId  : req.context.workspaceId }) ; 
         if( !subscribed && count_of_notes > 3 ) { 
             res.status(200).json({msg:"You have exceeded the limit to create notes. Switch to premium." }) ;
             return ; 
         } 
-        const note = await createNote({prisma, data : {title , content , workspaceId}}) ;  
+        const note = await createNote({prisma, data : {title , content , workspaceId : req.context.workspaceId}}) ;  
         res.status(200).json({msg:"Note created successfully." , data : note }) ;  
     }
     catch(e) { 
@@ -74,22 +63,17 @@ NotesRouter.post("" , async  (req  : AuthorizedRequest  , res : Response)=> {
         res.status(500).json({msg:"internal server error"}) ; 
         return ; 
     }  
-    finally { 
-        await prisma.$disconnect() ; 
-    }
 }) 
 
 NotesRouter.put("/:id",   async  (req  : AuthorizedRequest  , res : Response)=> {  
     try {
-        await prisma.$connect() ;
-        const {  workspaceId , title , content } = req.body ; 
-        const id = req.params.id ;    
-        if( typeof id !== "number" &&  !workspaceId ||  typeof workspaceId !== "number" || !title || typeof title !== "string" || typeof content !== "string" ) { 
-            res.status(404).json({msg:"Invalid or missing fields in body or params."}) ;
+        const { title , content } = req.body ; 
+        const id = parseInt(req.params.id) ;    
+        if( isNaN(id) ||  typeof title !== "string" || typeof content !== "string" ) { 
+            res.status(400).json({msg:"Invalid or missing fields in body or params."}) ;
             return ;
         } 
-        const parsedId = parseInt(req.params.id) ; 
-        const note = await updateNote({prisma, data : {title , content , workspaceId} , id : parsedId}) ;  
+        const note = await updateNote({prisma, data : {title , content  } , id  }) ;  
         res.status(201).json({msg:"Note updated." , data : note }) ;
     }
     catch(e) { 
@@ -97,22 +81,16 @@ NotesRouter.put("/:id",   async  (req  : AuthorizedRequest  , res : Response)=> 
         res.status(500).json({msg:"internal server error"}) ; 
         return ; 
     }  
-    finally { 
-        await prisma.$disconnect() ; 
-    }
 })    
 
 NotesRouter.delete("/:id",  async  (req  : AuthorizedRequest  , res : Response)=> {  
-    try {
-        await prisma.$connect() ;
-        const {  workspaceId , title , content } = req.body ; 
-        const id = req.params.id ;     
-        if( typeof id !== "number" &&  !workspaceId ||  typeof workspaceId !== "number" || !title || typeof title !== "string" || typeof content !== "string" ) { 
-            res.status(404).json({msg:"Invalid or missing fields in body or params."}) ;
+    try { 
+        const id = parseInt(req.params.id) ; 
+        if(isNaN(id)) { 
+            res.status(400).json("incompatible path param passed") ;  
             return ;
-        }  
-        const parsedId = parseInt(req.params.id) ; 
-        await deleteNote({prisma, id : parsedId }) ;  
+        } 
+        await deleteNote({prisma, id  }) ;  
         res.status(200).json({msg:"Note deleted."}) ;  
     }
     catch(e) { 
@@ -120,9 +98,6 @@ NotesRouter.delete("/:id",  async  (req  : AuthorizedRequest  , res : Response)=
         res.status(500).json({msg:"internal server error"}) ; 
         return ; 
     }  
-    finally { 
-        await prisma.$disconnect() ; 
-    }
 })    
 
 

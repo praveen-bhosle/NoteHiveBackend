@@ -1,8 +1,8 @@
 import {  PrismaClient } from "@prisma/client";
 
 export const checkWorkspaceExists = async ( {prisma,name , userId  }  : { prisma : PrismaClient , name : string , userId : number     }  ) => {  
-    const user = await prisma.workspace.findFirst({where : {name , users : {  some  : {  userId  } } }}) ; 
-    return user === null ; 
+    const workspace = await prisma.workspace.findFirst({where : {name , users : {  some  : {  userId  } } }}) ; 
+    return workspace ; 
 } 
 
 export const createWorkspace = async ( {prisma,name , userId }  : { prisma:PrismaClient , name : string , userId : number  }    )  =>  { 

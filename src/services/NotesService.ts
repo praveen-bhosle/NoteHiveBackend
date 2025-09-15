@@ -15,7 +15,7 @@ export const createNote = async({ prisma , data } : { prisma : PrismaClient  , d
     return note ; 
 }
 
-export const updateNote = async({ prisma , data , id   } : { prisma : PrismaClient  , data : { title : string , content? : string , workspaceId : number  } , id : number   }) => { 
+export const updateNote = async({ prisma , data , id   } : { prisma : PrismaClient  , data : { title : string , content? : string } , id : number   }) => { 
     const note =  await prisma.note.update( { where : { id } ,  data}) ;  
     return note ; 
 }

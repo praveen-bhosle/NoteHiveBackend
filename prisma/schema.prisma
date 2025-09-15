@@ -13,7 +13,7 @@ model User {
  name String
  password String
  email String  @unique
- workspaces WokspacesOnUsers[]  
+ workspaces WorkspacesOnUsers[]  
  createdAt DateTime @default(now())
  updatedAt DateTime @default(now()) 
 }
@@ -22,7 +22,7 @@ model User {
 model Workspace { 
   id Int @id @default(autoincrement()) 
   name String 
-  users  WokspacesOnUsers[]
+  users  WorkspacesOnUsers[]
   notes  Note[]
   subscribed Boolean @default(false)
   createdAt DateTime @default(now())
@@ -34,7 +34,7 @@ enum Role {
   MEMBER
 }
 
-model WokspacesOnUsers { 
+model WorkspacesOnUsers { 
   userId       Int 
   user         User @relation(references: [id] , fields: [userId] , onDelete: Cascade)
   workspaceId  Int 

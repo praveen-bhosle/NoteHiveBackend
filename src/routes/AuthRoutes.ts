@@ -12,13 +12,12 @@ AuthRouter.post("/signup",async (req: Request , res :Response) => {
         const {name,email,password} = req.body ; 
         const salt  = await bcrypt.genSalt(10) ; 
         const hashedPassword = await bcrypt.hash(password,salt) ; 
-        await prisma.$connect() ; 
         const userExists = await  checkUserExists({prisma,email}) ; 
         if(userExists) {
             res.status(409).json({msg:"user alredy exists"}) ;  
             return ;   
         }
-        await createUser({prisma,name,email,password}) ;  
+        await createUser({prisma,name,email,password:hashedPassword}) ;  
         res.status(200).json({msg :"Account created"}) ; 
         return ; 
     }
@@ -26,21 +25,19 @@ AuthRouter.post("/signup",async (req: Request , res :Response) => {
         console.log(JSON.stringify(e)) ; 
         res.status(500).json({msg:"internal server error."}) 
     }
-    finally { 
-        await prisma.$disconnect() ; 
-    }
 }) 
 
 AuthRouter.post("/login" , async  (req : Request , res : Response ) => { 
     try { 
         const {email,password} = req.body ;  
-        await prisma.$connect() ; 
         const  user  = await getUser({prisma,email}) ; 
+        console.log(user) ; 
         if(!user) { 
             res.status(401).json({msg:"invalid credentials"}) ; 
             return ; 
         }
         const verifyPassword = await bcrypt.compare(password,user.password) ; 
+        console.log(verifyPassword) ; 
         if(!verifyPassword) { 
             res.status(401).json({msg:"invalid credentials"}) ; 
             return ; 
@@ -54,9 +51,8 @@ AuthRouter.post("/login" , async  (req : Request , res : Response ) => {
         console.log(JSON.stringify(e)) ; 
         res.status(500).json({msg:"internal server error."}) 
     }
-    finally { 
-        await prisma.$disconnect() ; 
-    }   
 }) ; 
 
 export { AuthRouter }  ; 
+
+// workspaceId needs to be passed for all the requests . that is used to the based access. 

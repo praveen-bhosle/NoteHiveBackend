@@ -1,3 +1,3 @@
 import { Role } from "@prisma/client";
 import { AuthenticatedRequest } from "./AuthenticatedRequest";
-export type AuthorizedRequest  = AuthenticatedRequest & { user : { role : Role }} ;  
+export type AuthorizedRequest  = AuthenticatedRequest & { user : { role : Role } , context : { workspaceId : number }} ;  
